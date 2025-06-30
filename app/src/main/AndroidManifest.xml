@@ -5,6 +5,10 @@
 
     <!-- Add necessary permissions -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    
+    <!-- Internet permission for update checks -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- Storage permissions for backup/restore functionality -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"

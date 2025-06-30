@@ -14,6 +14,7 @@ import com.securevault.di.AppModule
 import com.securevault.ui.components.PinEntryDialog
 import com.securevault.ui.navigation.AppNavigation
 import com.securevault.ui.theme.SecureAttendTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : FragmentActivity() {
 
@@ -44,6 +45,8 @@ class MainActivity : FragmentActivity() {
                 var isAuthenticated by remember { mutableStateOf(isThemeChange || wasAuthenticated) }
                 var showPinDialog by remember { mutableStateOf(false) }
                 val biometricHelper = AppModule.provideBiometricHelper(applicationContext)
+                val updateManager = AppModule.provideUpdateManager(applicationContext)
+                val scope = rememberCoroutineScope()
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -95,6 +98,19 @@ class MainActivity : FragmentActivity() {
                     } else if (!biometricHelper.isBiometricEnabled()) {
                         // If biometric is disabled, allow access without authentication
                         isAuthenticated = true
+                    }
+                }
+
+                // Check for updates silently on startup (only when authenticated)
+                LaunchedEffect(isAuthenticated) {
+                    if (isAuthenticated && !isThemeChange) {
+                        scope.launch {
+                            try {
+                                updateManager.checkForUpdates()
+                            } catch (e: Exception) {
+                                // Silently handle update check errors
+                            }
+                        }
                     }
                 }
             }

@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -70,6 +71,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.securevault.data.model.Password
+import com.securevault.di.AppModule
 import com.securevault.ui.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,6 +81,7 @@ fun MainScreen(navController: NavController) {
     val context = LocalContext.current
     val activity = context as? FragmentActivity
     val configuration = LocalConfiguration.current
+    val updateManager = AppModule.provideUpdateManager(context)
 
     val passwords by viewModel.passwords.collectAsState()
     val filteredPasswords by viewModel.filteredPasswords.collectAsState()
@@ -86,8 +89,10 @@ fun MainScreen(navController: NavController) {
     val isLoading by viewModel.isLoading.collectAsState()
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
     val error by viewModel.error.collectAsState()
+    val updateInfo by updateManager.updateInfo
     var showSearch by remember { mutableStateOf(false) }
     var showDeleteAllDialog by remember { mutableStateOf(false) }
+    var showUpdateNotification by remember { mutableStateOf(false) }
 
     // Calculate responsive title based on screen width and font scale
     val screenWidthDp = configuration.screenWidthDp
@@ -110,6 +115,13 @@ fun MainScreen(navController: NavController) {
         error?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             viewModel.clearError()
+        }
+    }
+
+    // Show update notification when update is available
+    LaunchedEffect(updateInfo.isUpdateAvailable) {
+        if (updateInfo.isUpdateAvailable) {
+            showUpdateNotification = true
         }
     }
 
@@ -191,6 +203,75 @@ fun MainScreen(navController: NavController) {
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 )
+            }
+
+            // Update notification banner
+            if (showUpdateNotification && updateInfo.isUpdateAvailable) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .clickable { 
+                            navController.navigate(Screen.Settings.route)
+                            showUpdateNotification = false
+                        },
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.SystemUpdate,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Update Available",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Text(
+                                    text = "Version ${updateInfo.latestVersion} is ready",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = { showUpdateNotification = false },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Clear,
+                                    contentDescription = "Dismiss",
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                            Icon(
+                                Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
             }
 
             // Main content

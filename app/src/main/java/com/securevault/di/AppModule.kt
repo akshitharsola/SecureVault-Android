@@ -12,6 +12,7 @@ import com.securevault.utils.BiometricHelper
 import com.securevault.utils.ClipboardManager
 import com.securevault.utils.SecurityManager
 import com.securevault.utils.ThemeManager
+import com.securevault.utils.UpdateManager
 
 object AppModule {
 
@@ -56,6 +57,10 @@ object AppModule {
 
     fun provideClipboardManager(context: Context): ClipboardManager {
         return ClipboardManager(context)
+    }
+
+    fun provideUpdateManager(context: Context): UpdateManager {
+        return UpdateManager(context)
     }
 
     // Backup-related dependencies

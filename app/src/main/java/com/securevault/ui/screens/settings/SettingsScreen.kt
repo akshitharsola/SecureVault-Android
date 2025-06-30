@@ -26,6 +26,8 @@ import com.securevault.ui.components.ColorPicker
 import com.securevault.ui.components.PinSetupDialog
 import com.securevault.ui.components.RestoreDialog
 import com.securevault.utils.ThemeManager
+import com.securevault.utils.UpdateManager
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +35,8 @@ fun SettingsScreen(navController: NavController) {
     val viewModel: SettingsViewModel = viewModel()
     val context = LocalContext.current
     val biometricHelper = AppModule.provideBiometricHelper(context)
+    val updateManager = AppModule.provideUpdateManager(context)
+    val scope = rememberCoroutineScope()
 
     // State variables
     val themeConfig by viewModel.themeConfig.collectAsState()
@@ -46,11 +50,16 @@ fun SettingsScreen(navController: NavController) {
     val selectedBackupUri by viewModel.selectedBackupUri.collectAsState()
     val selectedBackupFileName by viewModel.selectedBackupFileName.collectAsState()
 
+    // Update states
+    val updateInfo by updateManager.updateInfo
+    val isCheckingForUpdates by updateManager.isCheckingForUpdates
+
     // Expandable sections state
     var isBasicThemeExpanded by remember { mutableStateOf(false) }
     var isAdvancedThemeExpanded by remember { mutableStateOf(false) }
     var isSecurityExpanded by remember { mutableStateOf(false) }
     var isBackupExpanded by remember { mutableStateOf(false) }
+    var isAppInfoExpanded by remember { mutableStateOf(false) }
 
     // Dialog states
     var showPinSetupDialog by remember { mutableStateOf(false) }
@@ -58,6 +67,7 @@ fun SettingsScreen(navController: NavController) {
     var showRestoreDialog by remember { mutableStateOf(false) }
     var showBiometricDialog by remember { mutableStateOf(false) }
     var showDiscardDialog by remember { mutableStateOf(false) }
+    var showUpdateDialog by remember { mutableStateOf(false) }
 
     // File picker launcher
     val documentPickerLauncher = rememberLauncherForActivityResult(
@@ -456,6 +466,104 @@ fun SettingsScreen(navController: NavController) {
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // App Info & Updates Section
+            SettingsCard(
+                title = "App Info & Updates",
+                icon = Icons.Default.Info,
+                isExpanded = isAppInfoExpanded,
+                onToggleExpand = { isAppInfoExpanded = !isAppInfoExpanded }
+            ) {
+                // Current Version
+                ListItem(
+                    headlineContent = { Text("Current Version") },
+                    supportingContent = { Text("v${updateInfo.currentVersion}") },
+                    leadingContent = {
+                        Icon(Icons.Default.AppSettingsAlt, contentDescription = null)
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Check for Updates
+                ListItem(
+                    headlineContent = { Text("Check for Updates") },
+                    supportingContent = {
+                        when {
+                            isCheckingForUpdates -> Text("Checking for updates...")
+                            updateInfo.isUpdateAvailable -> Text("Update available: v${updateInfo.latestVersion}")
+                            else -> Text("You're using the latest version")
+                        }
+                    },
+                    leadingContent = {
+                        if (isCheckingForUpdates) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        } else {
+                            Icon(
+                                if (updateInfo.isUpdateAvailable) Icons.Default.SystemUpdate else Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = if (updateInfo.isUpdateAvailable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    },
+                    trailingContent = {
+                        if (updateInfo.isUpdateAvailable) {
+                            Button(
+                                onClick = { showUpdateDialog = true }
+                            ) {
+                                Text("Update")
+                            }
+                        }
+                    },
+                    modifier = Modifier.clickable(enabled = !isCheckingForUpdates) {
+                        scope.launch {
+                            updateManager.checkForUpdates()
+                        }
+                    }
+                )
+
+                // Update notification if available
+                if (updateInfo.isUpdateAvailable) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.NewReleases,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "New version available!",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Version ${updateInfo.latestVersion} is now available for download.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -550,6 +658,53 @@ fun SettingsScreen(navController: NavController) {
             },
             selectedFileName = selectedBackupFileName,
             isLoading = isRestoreLoading
+        )
+    }
+
+    if (showUpdateDialog) {
+        AlertDialog(
+            onDismissRequest = { showUpdateDialog = false },
+            icon = {
+                Icon(
+                    Icons.Default.SystemUpdate,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            title = { Text("Update Available") },
+            text = {
+                Column {
+                    Text("A new version (v${updateInfo.latestVersion}) is available for download.")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (updateInfo.releaseNotes.isNotEmpty()) {
+                        Text(
+                            text = "What's new:",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = updateInfo.releaseNotes,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 4
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        updateManager.downloadUpdate(updateInfo.downloadUrl)
+                        showUpdateDialog = false
+                    }
+                ) {
+                    Text("Download")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUpdateDialog = false }) {
+                    Text("Later")
+                }
+            }
         )
     }
 }
