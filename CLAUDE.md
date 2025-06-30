@@ -78,3 +78,30 @@ The app follows Clean Architecture principles with these key layers:
 - Unit tests in `src/test/`
 - Instrumented tests in `src/androidTest/`
 - Uses JUnit 4 and Espresso for testing
+
+## Release & Deployment
+
+### GitHub Actions
+- Automated APK builds on tag pushes (e.g., `v1.0.0`)
+- Release workflow in `.github/workflows/release.yml`
+- Builds both debug and release APKs
+- Creates GitHub releases with proper signing
+
+### Release Process
+1. Create git tag: `git tag v1.0.0 && git push origin v1.0.0`
+2. GitHub Actions automatically builds and releases APKs
+3. Manual builds via Actions tab also supported
+
+### Signing Configuration
+- Release APKs signed via GitHub Secrets:
+  - `KEYSTORE_BASE64`: Base64 encoded keystore
+  - `SIGNING_KEY_ALIAS`: Key alias (default: securevault)
+  - `SIGNING_KEY_PASSWORD`: Key password
+  - `SIGNING_STORE_PASSWORD`: Keystore password
+- Keystore generated with: `keytool -genkey -v -keystore app/keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias securevault`
+
+## Project Files
+- `README.md`: Comprehensive project documentation
+- `LICENSE`: MIT License with security disclaimer
+- `RELEASE_SETUP.md`: GitHub Actions setup instructions
+- `.github/workflows/release.yml`: Automated release workflow
