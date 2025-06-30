@@ -23,10 +23,19 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = System.getenv("SIGNING_KEY_ALIAS")
-            keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
-            storeFile = file("keystore.jks")
-            storePassword = System.getenv("SIGNING_STORE_PASSWORD")
+            val alias = System.getenv("SIGNING_KEY_ALIAS")?.trim()
+            val keyPass = System.getenv("SIGNING_KEY_PASSWORD")?.trim()
+            val storePass = System.getenv("SIGNING_STORE_PASSWORD")?.trim()
+            
+            if (alias != null && keyPass != null && storePass != null) {
+                keyAlias = alias
+                keyPassword = keyPass
+                storeFile = file("keystore.jks")
+                storePassword = storePass
+                println("Signing config: alias=$alias, keystore=keystore.jks")
+            } else {
+                println("Missing signing environment variables")
+            }
         }
     }
     
@@ -38,9 +47,16 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = if (System.getenv("SIGNING_KEY_ALIAS") != null) {
+            
+            val hasSigningEnv = System.getenv("SIGNING_KEY_ALIAS") != null &&
+                               System.getenv("SIGNING_KEY_PASSWORD") != null &&
+                               System.getenv("SIGNING_STORE_PASSWORD") != null
+            
+            signingConfig = if (hasSigningEnv) {
+                println("Using release signing config")
                 signingConfigs.getByName("release")
             } else {
+                println("No signing config - building unsigned APK")
                 null
             }
         }
