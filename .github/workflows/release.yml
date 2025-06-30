@@ -1,5 +1,8 @@
 name: Build and Release APK
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
@@ -9,6 +12,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    env:
+      SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+      SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
     
     steps:
     - name: Checkout code
@@ -40,31 +48,21 @@ jobs:
         echo "$KEYSTORE_BASE64" | base64 -d > app/keystore.jks
         
     - name: Verify Keystore
-      env:
-        SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
       run: |
         ls -la app/keystore.jks
         echo "Keystore aliases:"
         keytool -list -keystore app/keystore.jks -storepass "$SIGNING_STORE_PASSWORD"
         
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug
-      
     - name: Debug Environment Variables
-      env:
-        SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-        SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
-        SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
       run: |
         echo "SIGNING_KEY_ALIAS is set: $([ -n "$SIGNING_KEY_ALIAS" ] && echo 'YES' || echo 'NO')"
         echo "SIGNING_KEY_PASSWORD is set: $([ -n "$SIGNING_KEY_PASSWORD" ] && echo 'YES' || echo 'NO')"
         echo "SIGNING_STORE_PASSWORD is set: $([ -n "$SIGNING_STORE_PASSWORD" ] && echo 'YES' || echo 'NO')"
         
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug
+        
     - name: Build Release APK
-      env:
-        SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-        SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
-        SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
       run: ./gradlew assembleRelease
       
     - name: Upload Release APK to Artifacts
