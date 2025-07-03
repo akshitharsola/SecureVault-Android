@@ -194,16 +194,6 @@ fun MainScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Search bar section (only shown when search is active and as an additional bar)
-            if (showSearch) {
-                SearchBar(
-                    query = searchQuery,
-                    onQueryChange = viewModel::updateSearchQuery,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
 
             // Update notification banner
             if (showUpdateNotification && updateInfo.isUpdateAvailable) {
@@ -402,50 +392,6 @@ fun SearchTopAppBar(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        TextField(
-            value = query,
-            onValueChange = onQueryChange,
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Search passwords...") },
-            leadingIcon = {
-                Icon(
-                    Icons.Default.Search,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            },
-            trailingIcon = {
-                if (query.isNotEmpty()) {
-                    IconButton(onClick = { onQueryChange("") }) {
-                        Icon(
-                            Icons.Default.Clear,
-                            contentDescription = "Clear",
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    }
-                }
-            },
-            singleLine = true,
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent
-            )
-        )
-    }
-}
 
 @Composable
 fun EmptyState(onAddClick: () -> Unit) {
