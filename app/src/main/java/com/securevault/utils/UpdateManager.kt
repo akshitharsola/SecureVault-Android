@@ -29,7 +29,7 @@ class UpdateManager(private val context: Context) {
         private const val UPDATE_CHECK_TIMEOUT = 10000 // 10 seconds
     }
 
-    private val _updateInfo = mutableStateOf(UpdateInfo())
+    private val _updateInfo = mutableStateOf(UpdateInfo(currentVersion = getCurrentVersion()))
     val updateInfo = _updateInfo
 
     private val _isCheckingForUpdates = mutableStateOf(false)
@@ -49,15 +49,24 @@ class UpdateManager(private val context: Context) {
             _isCheckingForUpdates.value = true
             try {
                 val currentVersion = getCurrentVersion()
+                
+                // Don't offer production updates for debug builds
+                if (context.packageName.endsWith(".debug")) {
+                    val updateInfo = UpdateInfo(
+                        currentVersion = currentVersion,
+                        isUpdateAvailable = false
+                    )
+                    _updateInfo.value = updateInfo
+                    return@withContext updateInfo
+                }
+                
                 val latestReleaseInfo = fetchLatestReleaseInfo()
                 
                 if (latestReleaseInfo != null) {
                     val latestVersion = latestReleaseInfo.getString("tag_name").removePrefix("v")
                     val isUpdateAvailable = isVersionNewer(latestVersion, currentVersion)
                     
-                    val downloadUrl = latestReleaseInfo.getJSONArray("assets")
-                        .getJSONObject(0)
-                        .getString("browser_download_url")
+                    val downloadUrl = getPreferredDownloadUrl(latestReleaseInfo)
                     
                     val releaseNotes = latestReleaseInfo.getString("body")
                     
@@ -90,6 +99,38 @@ class UpdateManager(private val context: Context) {
             } finally {
                 _isCheckingForUpdates.value = false
             }
+        }
+    }
+
+    private fun getPreferredDownloadUrl(releaseInfo: JSONObject): String {
+        val assets = releaseInfo.getJSONArray("assets")
+        
+        // Look for release APK first, then fall back to debug APK
+        for (i in 0 until assets.length()) {
+            val asset = assets.getJSONObject(i)
+            val assetName = asset.getString("name")
+            
+            // Prefer release APK over debug APK
+            if (assetName.contains("app-release.apk", ignoreCase = true)) {
+                return asset.getString("browser_download_url")
+            }
+        }
+        
+        // Fall back to first APK if no release APK found
+        for (i in 0 until assets.length()) {
+            val asset = assets.getJSONObject(i)
+            val assetName = asset.getString("name")
+            
+            if (assetName.endsWith(".apk", ignoreCase = true)) {
+                return asset.getString("browser_download_url")
+            }
+        }
+        
+        // Final fallback to first asset
+        return if (assets.length() > 0) {
+            assets.getJSONObject(0).getString("browser_download_url")
+        } else {
+            ""
         }
     }
 
