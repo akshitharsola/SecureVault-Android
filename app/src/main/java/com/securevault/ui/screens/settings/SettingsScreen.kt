@@ -1,6 +1,7 @@
 // app/src/main/java/com/securevault/ui/screens/settings/SettingsScreen.kt
 package com.securevault.ui.screens.settings
 
+import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -9,9 +10,13 @@ import androidx.biometric.BiometricManager
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -87,6 +92,17 @@ fun SettingsScreen(navController: NavController) {
         result == BiometricManager.BIOMETRIC_SUCCESS
     }
 
+    // Helper function to open URLs
+    fun openUrl(url: String) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Could not open link", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     // Handle messages
     LaunchedEffect(error) {
         error?.let {
@@ -142,6 +158,7 @@ fun SettingsScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
             // Show unsaved changes indicator
             if (hasUnsavedChanges) {
@@ -476,12 +493,103 @@ fun SettingsScreen(navController: NavController) {
                 isExpanded = isAppInfoExpanded,
                 onToggleExpand = { isAppInfoExpanded = !isAppInfoExpanded }
             ) {
+                // App Description
+                ListItem(
+                    headlineContent = { Text("About SecureVault") },
+                    supportingContent = { 
+                        Text("A secure, offline-first password manager with biometric authentication and encrypted backup functionality") 
+                    },
+                    leadingContent = {
+                        Icon(Icons.Default.Security, contentDescription = null)
+                    },
+                    trailingContent = {
+                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = "Open README")
+                    },
+                    modifier = Modifier.clickable {
+                        openUrl("https://github.com/akshitharsola/SecureVault-Android/blob/master/README.md")
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Key Features
+                ListItem(
+                    headlineContent = { Text("Key Features") },
+                    supportingContent = { 
+                        Text("• AES encryption for all data\n• Biometric authentication\n• Encrypted backups\n• Material 3 design\n• No internet permissions") 
+                    },
+                    leadingContent = {
+                        Icon(Icons.Default.Star, contentDescription = null)
+                    },
+                    trailingContent = {
+                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = "Open Features")
+                    },
+                    modifier = Modifier.clickable {
+                        openUrl("https://github.com/akshitharsola/SecureVault-Android#features")
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
                 // Current Version
                 ListItem(
                     headlineContent = { Text("Current Version") },
                     supportingContent = { Text("v${updateInfo.currentVersion}") },
                     leadingContent = {
                         Icon(Icons.Default.AppSettingsAlt, contentDescription = null)
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Developer Info
+                ListItem(
+                    headlineContent = { Text("Developer") },
+                    supportingContent = { Text("Akshit Harsola (@akshitharsola)") },
+                    leadingContent = {
+                        Icon(Icons.Default.Person, contentDescription = null)
+                    },
+                    trailingContent = {
+                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = "Open GitHub Profile")
+                    },
+                    modifier = Modifier.clickable {
+                        openUrl("https://github.com/akshitharsola")
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Project Info
+                ListItem(
+                    headlineContent = { Text("Project License") },
+                    supportingContent = { Text("MIT License - Open Source Project") },
+                    leadingContent = {
+                        Icon(Icons.Default.Code, contentDescription = null)
+                    },
+                    trailingContent = {
+                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = "Open License")
+                    },
+                    modifier = Modifier.clickable {
+                        openUrl("https://github.com/akshitharsola/SecureVault-Android/blob/master/LICENSE")
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Built With
+                ListItem(
+                    headlineContent = { Text("Built With") },
+                    supportingContent = { 
+                        Text("Kotlin • Jetpack Compose • Room Database • Clean Architecture") 
+                    },
+                    leadingContent = {
+                        Icon(Icons.Default.Build, contentDescription = null)
+                    },
+                    trailingContent = {
+                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = "Open Project")
+                    },
+                    modifier = Modifier.clickable {
+                        openUrl("https://github.com/akshitharsola/SecureVault-Android#technologies-used")
                     }
                 )
 
