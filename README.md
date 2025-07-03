@@ -27,9 +27,9 @@ A secure, offline-first password manager for Android built with modern technolog
 
 ## Screenshots
 
-| Main Screen | Add Password | Settings |
-|-------------|--------------|----------|
-| ![Main](screenshots/main.png) | ![Add](screenshots/add.png) | ![Settings](screenshots/settings.png) |
+| Main Screen | Add Password | Settings | Advanced Theme |
+|-------------|--------------|----------|----------------|
+| ![Main Screen](Screenshots/main_page.jpg) | ![Add Password](Screenshots/add_password_page.jpg) | ![Settings](Screenshots/settings_page.jpg) | ![Advanced Theme](Screenshots/advanced%20theme_main_page.jpg) |
 
 ## Installation
 
